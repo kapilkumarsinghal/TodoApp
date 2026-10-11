@@ -1,0 +1,56 @@
+<main class="habit-page">
+  <header class="habit-topbar">
+    <a class="brand" href="/">◷ <span>daymark</span></a>
+    <nav><a href="/">Calendar</a><span>/</span><strong>Habit tracker</strong></nav>
+    <a class="back-link" href="/">← Back to calendar</a>
+  </header>
+
+  <section class="habit-heading">
+    <div><p class="eyebrow">Small steps, every day</p><h1>Habit tracker</h1><p>Build a rhythm you can feel good about.</p></div>
+    <div class="month-control"><button type="button" (click)="shiftMonth(-1)" aria-label="Previous month">‹</button><strong>{{ label() }}</strong><button type="button" (click)="shiftMonth(1)" aria-label="Next month">›</button></div>
+  </section>
+
+  @if (error()) { <div class="notice" role="alert">{{ error() }}</div> }
+
+  <section class="habit-summary">
+    <div><span class="summary-icon">✳</span><div><strong>{{ progress() }}%</strong><small>monthly consistency</small></div></div>
+    <div class="summary-progress"><span [style.width.%]="progress()"></span></div>
+    <div class="summary-count"><strong>{{ doneTotal() }}</strong><small>check-ins</small></div>
+    <div class="summary-count"><strong>{{ habits().length }}</strong><small>active habits</small></div>
+  </section>
+
+  <section class="tracker-card" aria-label="Monthly habit tracker">
+    <div class="tracker-scroll">
+      <table>
+        <thead>
+          <tr class="week-groups"><th class="habit-column" rowspan="2">My habits</th>@for (group of monthGroups(); track group.label) { <th [attr.colspan]="group.days.length">{{ group.label }}</th> }<th class="progress-column" rowspan="2">Progress</th></tr>
+          <tr class="date-head">@for (day of days(); track day) { <th [class.today-col]="isToday(day)"><span>{{ dayOfWeek(day) }}</span><strong>{{ day }}</strong></th> }</tr>
+        </thead>
+        <tbody>
+          @if (loading()) { <tr><td class="empty-state" [attr.colspan]="days().length + 2">Loading your habits…</td></tr> }
+          @else if (habits().length === 0) { <tr><td class="empty-state" [attr.colspan]="days().length + 2">Add a habit below to start your monthly tracker.</td></tr> }
+          @for (habit of habits(); track habit.id) {
+            <tr>
+              <th class="habit-name"><span>{{ habit.emoji }}</span><strong>{{ habit.name }}</strong><button type="button" (click)="deleteHabit(habit)" [attr.aria-label]="'Delete ' + habit.name">×</button></th>
+              @for (day of days(); track day) { <td class="check-cell"><button type="button" [class.checked]="isDone(habit, day)" [attr.aria-pressed]="isDone(habit, day)" [attr.aria-label]="habit.name + ', ' + label() + ' ' + day" (click)="toggle(habit, day)">{{ isDone(habit, day) ? '✓' : '' }}</button></td> }
+              <td class="row-progress"><span class="progress-track"><i [style.width.%]="habitPercent(habit)"></i></span><strong>{{ habitPercent(habit) }}%</strong></td>
+            </tr>
+          }
+        </tbody>
+        @if (!loading() && habits().length) {
+          <tfoot>
+            <tr class="daily-progress"><th>Daily progress</th>@for (item of dayProgress(); track item.day) { <td><strong>{{ item.percent }}%</strong><span>{{ item.done }} / {{ habits().length }}</span></td> }<td class="row-progress">—</td></tr>
+          </tfoot>
+        }
+      </table>
+    </div>
+    <p class="tracker-hint">Tap a box to mark a habit complete. Your check-ins are saved by date.</p>
+  </section>
+
+  <form class="add-habit" (ngSubmit)="addHabit()">
+    <div><p class="eyebrow">Make it yours</p><h2>Add a habit</h2></div>
+    <label class="emoji-input">Emoji<input name="emoji" maxlength="8" [ngModel]="draftEmoji()" (ngModelChange)="draftEmoji.set($event)" aria-label="Habit emoji" /></label>
+    <label class="name-input">Habit name<input name="name" [ngModel]="draftName()" (ngModelChange)="draftName.set($event)" placeholder="e.g. Read for 20 minutes" required /></label>
+    <button type="submit">+ Add habit</button>
+  </form>
+</main>

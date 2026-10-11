@@ -1,0 +1,275 @@
+<div class="planner">
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="Daymark home">
+      <span class="brand-mark">d</span>
+      <span>daymark</span>
+    </a>
+
+    <button class="new-event" type="button" (click)="openComposer()">
+      <span class="plus">+</span> New event
+    </button>
+
+    <nav class="primary-nav" aria-label="Calendar views">
+      <button class="nav-item active" type="button" (click)="selectedCategory.set(null)">
+        <span class="nav-icon">▦</span> Calendar
+      </button>
+      <a class="nav-item" href="/habits"><span class="nav-icon">✓</span> Habit tracker</a>
+      <button class="nav-item" type="button" (click)="goToToday()">
+        <span class="nav-icon">◷</span> This week
+      </button>
+      <button class="nav-item" type="button" (click)="goToMonth()">
+        <span class="nav-icon">▣</span> This month
+      </button>
+    </nav>
+
+    <div class="sidebar-divider"></div>
+
+    <section class="mini-calendar" aria-label="Choose a date">
+      <header class="mini-calendar-header">
+        <strong>{{ miniMonthLabel() }}</strong>
+        <div class="mini-calendar-controls">
+          <button type="button" aria-label="Previous month" (click)="shiftMonth(-1)">‹</button>
+          <button type="button" aria-label="Next month" (click)="shiftMonth(1)">›</button>
+        </div>
+      </header>
+      <div class="mini-grid weekday-labels">
+        @for (day of ['M', 'T', 'W', 'T', 'F', 'S', 'S']; track $index) {
+          <span>{{ day }}</span>
+        }
+      </div>
+      <div class="mini-grid">
+        @for (day of miniCalendarDays(); track day.date.toISOString()) {
+          <button
+            type="button"
+            class="mini-day"
+            [class.outside-month]="!day.inCurrentMonth"
+            [class.selected]="isDateSelected(day.date)"
+            [class.today]="isToday(day.date)"
+            (click)="chooseDate(day.date)"
+          >{{ day.date | date:'d' }}</button>
+        }
+      </div>
+    </section>
+
+    <div class="sidebar-divider"></div>
+
+    <section class="sidebar-section">
+      <div class="section-title"><span>Calendars</span><button type="button" aria-label="Add calendar">+</button></div>
+      <button class="category-item" type="button" [class.category-active]="selectedCategory() === null" (click)="selectedCategory.set(null)">
+        <i class="category-dot all-dot"></i><span>All events</span><small>{{ todos().length }}</small>
+      </button>
+      @for (category of categories; track category) {
+        <button class="category-item" type="button" [class.category-active]="selectedCategory() === category" (click)="selectedCategory.set(category)">
+          <i class="category-dot" [class]="'category-dot ' + categoryClass(category)"></i>
+          <span>{{ category }}</span>
+          <small>{{ todos().filter(todo => todo.category === category).length }}</small>
+        </button>
+      }
+    </section>
+
+    <div class="sidebar-divider unscheduled-divider"></div>
+    <section class="sidebar-section unscheduled-section">
+      <div class="section-title"><span>Unscheduled</span><small>{{ unscheduledTodos().length }}</small></div>
+      @if (unscheduledTodos().length === 0) {
+        <p class="sidebar-empty">Your open tasks will show here.</p>
+      } @else {
+        @for (todo of unscheduledTodos(); track todo.id) {
+          <div class="unscheduled-task">
+            <button class="task-check" type="button" (click)="toggleTodo(todo)" [attr.aria-label]="'Complete ' + todo.title"></button>
+            <span>{{ todo.title }}</span>
+            <button class="remove-task" type="button" (click)="deleteTodo(todo.id)" [attr.aria-label]="'Delete ' + todo.title">×</button>
+          </div>
+        }
+      }
+    </section>
+
+    <div class="sidebar-footer">
+      <span class="avatar">K</span>
+      <span class="profile-copy"><strong>My workspace</strong><small>Personal plan</small></span>
+      <span class="more">···</span>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <div class="breadcrumb">Workspace <span>/</span> <strong>Calendar</strong></div>
+      <div class="topbar-actions">
+        <span class="today-label">{{ selectedDate() | date:'EEEE, MMMM d' }}</span>
+        <button class="icon-button" type="button" aria-label="Search">⌕</button>
+        <button class="icon-button notification" type="button" aria-label="Notifications">♧</button>
+        <span class="avatar top-avatar">K</span>
+      </div>
+    </header>
+
+    <div class="calendar-heading">
+      <div>
+        <p class="eyebrow">Plan your days</p>
+        <h1>Calendar</h1>
+        <p class="week-subtitle">A little structure makes room for good work.</p>
+      </div>
+      <div class="view-actions">
+        <div class="date-nav">
+          <button type="button" aria-label="Previous week" (click)="shiftWeek(-1)">‹</button>
+          <button type="button" aria-label="Next week" (click)="shiftWeek(1)">›</button>
+        </div>
+        <button class="today-button" type="button" (click)="goToToday()">Today</button>
+        <button class="week-select" type="button">Week <span>⌄</span></button>
+        <button class="share-button" type="button" title="Calendar sharing is not available yet" disabled>Share</button>
+      </div>
+    </div>
+
+    @if (errorMessage()) {
+      <div class="notice" role="alert">{{ errorMessage() }}</div>
+    }
+
+    <div class="week-range">{{ weekLabel() }} <span>·</span> {{ timezoneLabel }}</div>
+
+    <section class="calendar-card" aria-label="Weekly calendar">
+      <div class="calendar-scroll">
+        <div class="calendar-grid">
+          <div class="time-spacer"></div>
+          @for (day of weekDays(); track day.toISOString()) {
+            <button class="day-heading" type="button" [class.current-day]="isToday(day)" (click)="chooseDate(day)">
+              <span>{{ day | date:'EEE' }}</span>
+              <strong>{{ day | date:'d' }}</strong>
+            </button>
+          }
+
+          <div class="time-rail">
+            @for (hour of hours; track hour) {
+              <span>{{ hour | date:'ha' }}</span>
+            }
+          </div>
+          @for (day of weekDays(); track day.toISOString()) {
+            <div class="day-track" [class.current-track]="isToday(day)">
+              @for (hour of hours; track hour) { <div class="hour-line"></div> }
+              @for (event of eventsForDay(day); track event.todo.id + '-' + event.start.toISOString()) {
+                <article
+                  [class]="'event-card ' + categoryClass(event.todo.category) + (event.todo.isCompleted ? ' event-complete' : '')"
+                  [style.top.%]="eventTop(event)"
+                  [style.height.%]="eventHeight(event)"
+                  [title]="event.todo.title + ' · ' + (event.start | date:'shortTime')"
+                >
+                  <div class="event-time">{{ event.start | date:'h:mm a' }} – {{ event.end | date:'h:mm a' }}</div>
+                  <strong>{{ event.todo.title }}</strong>
+                  @if (event.todo.description) { <span class="event-description">{{ event.todo.description }}</span> }
+                  <button type="button" class="event-check" (click)="toggleTodo(event.todo)" [attr.aria-label]="event.todo.isCompleted ? 'Mark incomplete' : 'Mark complete'">{{ event.todo.isCompleted ? '✓' : '○' }}</button>
+                </article>
+              }
+            </div>
+          }
+        </div>
+      </div>
+      @if (scheduledCount() === 0) {
+        <div class="calendar-empty">No events this week. <button type="button" (click)="openComposer()">Schedule your first event</button></div>
+      }
+    </section>
+
+    <footer class="calendar-footer">
+      <span><i class="legend-dot category-work"></i> Work</span>
+      <span><i class="legend-dot category-personal"></i> Personal</span>
+      <span><i class="legend-dot category-health"></i> Health</span>
+      <span><i class="legend-dot category-learning"></i> Learning</span>
+      <span class="footer-spacer"></span>
+      <span>{{ completedCount() }} completed</span>
+    </footer>
+  </main>
+
+  <aside class="details-panel">
+    <header class="details-heading">
+      <div><p class="eyebrow">Your week</p><h2>At a glance</h2></div>
+      <button class="icon-button" type="button" aria-label="More options">···</button>
+    </header>
+
+    <section class="summary-card">
+      <div class="summary-number">{{ scheduledCount() }}</div>
+      <div><strong>scheduled events</strong><span>across your calendar</span></div>
+      <div class="summary-mark">↗</div>
+    </section>
+
+    <section class="agenda-section">
+      <div class="agenda-title"><h3>Up next</h3><span>{{ upcomingTodos().length }} events</span></div>
+      @if (upcomingTodos().length === 0) {
+        <p class="agenda-empty">Nothing scheduled yet. Add an event to plan your week.</p>
+      } @else {
+        <div class="agenda-list">
+          @for (todo of upcomingTodos(); track todo.id) {
+            <article class="agenda-item">
+              <i class="agenda-bar" [class]="'agenda-bar ' + categoryClass(todo.category)"></i>
+              <div>
+                <strong>{{ todo.title }}</strong>
+                <span>{{ todo.startAt | date:'EEE, MMM d' }} · {{ todo.startAt | date:'h:mm a' }}</span>
+              </div>
+              <button type="button" (click)="chooseTodoDate(todo)" aria-label="View event date">›</button>
+            </article>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="focus-card">
+      <div class="focus-icon">✳</div>
+      <h3>Make space to focus</h3>
+      <p>Block time for the work that matters most.</p>
+      <button type="button" (click)="openComposer()">Plan focus time <span>→</span></button>
+    </section>
+
+    <section class="share-card">
+      <div class="share-avatars"><span>K</span><span>+</span></div>
+      <h3>Better together</h3>
+      <p>Shared calendars and teammates are coming soon.</p>
+      <button type="button" disabled>Invite people</button>
+    </section>
+  </aside>
+</div>
+
+@if (isComposerOpen()) {
+  <div class="modal-backdrop" (click)="closeComposer()">
+    <section class="event-modal" role="dialog" aria-modal="true" aria-labelledby="event-modal-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div><p class="eyebrow">Add to your calendar</p><h2 id="event-modal-title">New event</h2></div>
+        <button class="icon-button" type="button" aria-label="Close" (click)="closeComposer()">×</button>
+      </header>
+      <form class="event-form" (ngSubmit)="submitTodo()">
+        <label>Event title<input name="title" [(ngModel)]="form.title" placeholder="Give this event a name" required /></label>
+        <label>Description<textarea name="description" [(ngModel)]="form.description" rows="3" placeholder="Add a note"></textarea></label>
+        <div class="form-two-col">
+          <label>Starts<input type="datetime-local" name="startAt" [(ngModel)]="form.startAt" required /></label>
+          <label>Ends<input type="datetime-local" name="endAt" [(ngModel)]="form.endAt" required /></label>
+        </div>
+        <div class="form-two-col">
+          <label>Reminder
+            <select name="reminder" [(ngModel)]="form.reminderMinutesBefore">
+              <option [ngValue]="null">No reminder</option><option [ngValue]="5">5 minutes before</option>
+              <option [ngValue]="10">10 minutes before</option><option [ngValue]="15">15 minutes before</option>
+              <option [ngValue]="30">30 minutes before</option>
+            </select>
+          </label>
+          <label>Repeat
+            <select name="repeat" [(ngModel)]="form.repeatEveryHours">
+              <option [ngValue]="null">Does not repeat</option><option [ngValue]="1">Every hour</option>
+              <option [ngValue]="2">Every 2 hours</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-two-col">
+          <label>Calendar
+            <select name="category" [(ngModel)]="form.category">
+              @for (category of categories; track category) { <option [ngValue]="category">{{ category }}</option> }
+            </select>
+          </label>
+          <label>Priority
+            <select name="priority" [(ngModel)]="form.priority">
+              <option [ngValue]="1">High</option><option [ngValue]="2">Normal</option><option [ngValue]="3">Low</option>
+            </select>
+          </label>
+        </div>
+        @if (errorMessage()) { <p class="error" role="alert">{{ errorMessage() }}</p> }
+        <footer class="modal-actions">
+          <button class="cancel-button" type="button" (click)="closeComposer()">Cancel</button>
+          <button class="save-button" type="submit" [disabled]="isSubmitting()">{{ isSubmitting() ? 'Saving…' : 'Save event' }}</button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
