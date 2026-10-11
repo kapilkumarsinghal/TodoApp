@@ -20,10 +20,12 @@ export class HabitTrackerComponent implements OnInit {
   readonly label = computed(() => new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric' }).format(this.month()));
   readonly weekdays = computed(() => this.days().map((day) => new Date(this.month().getFullYear(), this.month().getMonth(), day).toLocaleDateString('en', { weekday: 'short' })));
   readonly doneTotal = computed(() => this.habits().reduce((sum, habit) => sum + habit.completedDays.length, 0));
-  readonly possibleTotal = computed(() => this.days().length * this.habits().length);
+  readonly possibleTotal = computed(() => this.trackedDays() * this.habits().length);
   readonly progress = computed(() => this.possibleTotal() ? Math.round(this.doneTotal() / this.possibleTotal() * 100) : 0);
   readonly dayProgress = computed(() => this.days().map((day) => ({
     day, done: this.habits().filter((habit) => habit.completedDays.includes(day)).length,
+    notDone: this.habits().length - this.habits().filter((habit) => habit.completedDays.includes(day)).length,
+    tracked: day <= this.trackedDays(),
     percent: this.habits().length ? Math.round(this.habits().filter((habit) => habit.completedDays.includes(day)).length / this.habits().length * 100) : 0,
   })));
   ngOnInit(): void { void this.load(); }
@@ -37,7 +39,9 @@ export class HabitTrackerComponent implements OnInit {
   dateFor(day: number): string { const date = this.month(); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; }
   isDone(habit: Habit, day: number): boolean { return habit.completedDays.includes(day); }
   async toggle(habit: Habit, day: number): Promise<void> {
-    const completed = !this.isDone(habit, day);
+    const wasCompleted = this.isDone(habit, day);
+    if (wasCompleted && !window.confirm(`Remove the ${habit.name} check-in for ${this.label()} ${day}?`)) return;
+    const completed = !wasCompleted;
     this.habits.update((rows) => rows.map((row) => row.id !== habit.id ? row : { ...row, completedDays: completed ? [...row.completedDays, day].sort((a,b) => a-b) : row.completedDays.filter((value) => value !== day) }));
     try { await this.api.setCompletion(habit.id, this.dateFor(day), completed); }
     catch { await this.load(); this.error.set('Could not save that check-in.'); }
@@ -58,5 +62,12 @@ export class HabitTrackerComponent implements OnInit {
   }
   dayOfWeek(day: number): string { return this.weekdays()[day - 1]; }
   isToday(day: number): boolean { const current = new Date(); const selected = this.month(); return current.getDate() === day && current.getMonth() === selected.getMonth() && current.getFullYear() === selected.getFullYear(); }
-  habitPercent(habit: Habit): number { return Math.round(habit.completedDays.length / this.days().length * 100); }
+  habitPercent(habit: Habit): number { return this.trackedDays() ? Math.round(habit.completedDays.filter((day) => day <= this.trackedDays()).length / this.trackedDays() * 100) : 0; }
+  graphHeight(item: { day: number; percent: number; tracked: boolean }): number { return item.tracked ? item.percent : 0; }
+  private trackedDays(): number {
+    const selected = this.month(); const today = new Date();
+    if (selected.getFullYear() > today.getFullYear() || (selected.getFullYear() === today.getFullYear() && selected.getMonth() > today.getMonth())) return 0;
+    if (selected.getFullYear() < today.getFullYear() || (selected.getFullYear() === today.getFullYear() && selected.getMonth() < today.getMonth())) return this.days().length;
+    return today.getDate();
+  }
 }

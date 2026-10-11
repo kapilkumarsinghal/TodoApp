@@ -39,13 +39,38 @@
         </tbody>
         @if (!loading() && habits().length) {
           <tfoot>
-            <tr class="daily-progress"><th>Daily progress</th>@for (item of dayProgress(); track item.day) { <td><strong>{{ item.percent }}%</strong><span>{{ item.done }} / {{ habits().length }}</span></td> }<td class="row-progress">—</td></tr>
+            <tr class="daily-progress progress-row"><th>Progress</th>@for (item of dayProgress(); track item.day) { <td>{{ item.tracked ? item.percent + '%' : '—' }}</td> }<td class="row-progress">—</td></tr>
+            <tr class="daily-progress done-row"><th>Done</th>@for (item of dayProgress(); track item.day) { <td>{{ item.tracked ? item.done : '—' }}</td> }<td class="row-progress">—</td></tr>
+            <tr class="daily-progress not-done-row"><th>Not done</th>@for (item of dayProgress(); track item.day) { <td>{{ item.tracked ? item.notDone : '—' }}</td> }<td class="row-progress">—</td></tr>
           </tfoot>
         }
       </table>
     </div>
     <p class="tracker-hint">Tap a box to mark a habit complete. Your check-ins are saved by date.</p>
   </section>
+
+  @if (!loading() && habits().length) {
+    <section class="month-chart" aria-label="Monthly habit completion graph">
+      <header class="chart-heading"><div><p class="eyebrow">Your consistency</p><h2>{{ label() }} completion</h2><p>Share of habits completed each day</p></div><div class="chart-legend"><i></i> Completion</div></header>
+      <div class="chart-scroll">
+        <div class="chart-content">
+          <div class="chart-plot">
+            <div class="chart-guides"><span>100%</span><i></i><span>50%</span><i></i><span>0%</span></div>
+            <div class="chart-bars">
+              @for (item of dayProgress(); track item.day) {
+                <div class="chart-day" [class.future-day]="!item.tracked" [title]="item.tracked ? (label() + ' ' + item.day + ': ' + item.percent + '% (' + item.done + '/' + habits().length + ' habits)') : (label() + ' ' + item.day + ': not reached yet')">
+                  @if (item.tracked && item.percent > 0) { <span class="bar-value" [style.bottom.%]="graphHeight(item)">{{ item.percent }}%</span> }
+                  <div class="bar-track"><i [style.height.%]="graphHeight(item)"></i></div>
+                  <span class="bar-label">{{ item.day }}</span>
+                </div>
+              }
+            </div>
+          </div>
+          <div class="chart-axis-note"><span>Day of month</span><span>Future dates are left blank</span></div>
+        </div>
+      </div>
+    </section>
+  }
 
   <form class="add-habit" (ngSubmit)="addHabit()">
     <div><p class="eyebrow">Make it yours</p><h2>Add a habit</h2></div>
