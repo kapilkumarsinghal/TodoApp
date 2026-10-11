@@ -3,6 +3,8 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HabitApiService } from '../../data-access/habit-api.service';
 import { Habit } from '../../models/habit.models';
+import { AccountService } from '../../../accounts/data-access/account.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-habit-tracker', standalone: true, imports: [CommonModule, FormsModule],
@@ -10,6 +12,8 @@ import { Habit } from '../../models/habit.models';
 })
 export class HabitTrackerComponent implements OnInit {
   private readonly api = inject(HabitApiService);
+  readonly account = inject(AccountService);
+  private readonly router = inject(Router);
   readonly month = signal(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   readonly habits = signal<Habit[]>([]);
   readonly loading = signal(true);
@@ -29,6 +33,7 @@ export class HabitTrackerComponent implements OnInit {
     percent: this.habits().length ? Math.round(this.habits().filter((habit) => habit.completedDays.includes(day)).length / this.habits().length * 100) : 0,
   })));
   ngOnInit(): void { void this.load(); }
+  signOut(): void { this.account.logout(); void this.router.navigateByUrl('/login'); }
   async load(): Promise<void> {
     this.loading.set(true);
     try { this.habits.set(await this.api.get(this.month().getFullYear(), this.month().getMonth() + 1)); this.error.set(''); }

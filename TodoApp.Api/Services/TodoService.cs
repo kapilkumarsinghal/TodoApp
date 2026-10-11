@@ -15,9 +15,10 @@ public class TodoService : ITodoService
         _context = context;
     }
 
-    public async Task<IReadOnlyList<TodoResponse>> GetAllAsync()
+    public async Task<IReadOnlyList<TodoResponse>> GetAllAsync(string userId)
     {
         var items = await _context.Todos
+            .Where(todo => todo.OwnerId == userId)
             .AsNoTracking()
             .OrderByDescending(todo => todo.CreatedAt)
             .ToListAsync();
@@ -25,16 +26,16 @@ public class TodoService : ITodoService
         return items.Select(ToResponse).ToList();
     }
 
-    public async Task<TodoResponse?> GetByIdAsync(int id)
+    public async Task<TodoResponse?> GetByIdAsync(string userId, int id)
     {
         var item = await _context.Todos
             .AsNoTracking()
-            .FirstOrDefaultAsync(todo => todo.Id == id);
+            .FirstOrDefaultAsync(todo => todo.Id == id && todo.OwnerId == userId);
 
         return item is null ? null : ToResponse(item);
     }
 
-    public async Task<TodoResponse> CreateAsync(TodoCreateRequest request)
+    public async Task<TodoResponse> CreateAsync(string userId, TodoCreateRequest request)
     {
         var item = new TodoItem
         {
@@ -47,6 +48,7 @@ public class TodoService : ITodoService
             ReminderMinutesBefore = request.ReminderMinutesBefore,
             RepeatEveryHours = request.RepeatEveryHours,
             Category = NormalizeCategory(request.Category),
+            OwnerId = userId,
             Priority = request.Priority,
             CreatedAt = DateTime.UtcNow
         };
@@ -57,9 +59,9 @@ public class TodoService : ITodoService
         return ToResponse(item);
     }
 
-    public async Task<TodoResponse?> UpdateAsync(TodoUpdateRequest request)
+    public async Task<TodoResponse?> UpdateAsync(string userId, TodoUpdateRequest request)
     {
-        var item = await _context.Todos.FindAsync(request.Id);
+        var item = await _context.Todos.FirstOrDefaultAsync(todo => todo.Id == request.Id && todo.OwnerId == userId);
         if (item is null)
         {
             return null;
@@ -80,9 +82,9 @@ public class TodoService : ITodoService
         return ToResponse(item);
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(string userId, int id)
     {
-        var item = await _context.Todos.FindAsync(id);
+        var item = await _context.Todos.FirstOrDefaultAsync(todo => todo.Id == id && todo.OwnerId == userId);
         if (item is null)
         {
             return false;

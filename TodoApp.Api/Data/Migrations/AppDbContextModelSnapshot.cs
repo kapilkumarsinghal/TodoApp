@@ -34,12 +34,14 @@ public sealed class AppDbContextModelSnapshot : ModelSnapshot
             entity.Property<DateTime?>("EndAt").HasColumnType("datetime2");
             entity.Property<int?>("ReminderMinutesBefore").HasColumnType("int");
             entity.Property<int?>("RepeatEveryHours").HasColumnType("int");
+            entity.Property<string>("OwnerId").HasMaxLength(32).HasColumnType("nvarchar(32)");
             entity.Property<bool>("IsCompleted").HasColumnType("bit");
             entity.Property<int>("Priority").HasColumnType("int");
             entity.Property<DateTime?>("StartAt").HasColumnType("datetime2");
             entity.Property<string>("Title").IsRequired().HasMaxLength(200).HasColumnType("nvarchar(200)");
 
             entity.HasKey("Id");
+            entity.HasIndex("OwnerId");
             entity.HasIndex("StartAt");
             entity.ToTable("Todos");
         });
@@ -50,7 +52,9 @@ public sealed class AppDbContextModelSnapshot : ModelSnapshot
             entity.Property<DateTime>("CreatedAt").HasColumnType("datetime2");
             entity.Property<string>("Emoji").IsRequired().ValueGeneratedOnAdd().HasMaxLength(8).HasColumnType("nvarchar(8)").HasDefaultValue("✅");
             entity.Property<string>("Name").IsRequired().HasMaxLength(80).HasColumnType("nvarchar(80)");
+            entity.Property<string>("OwnerId").HasMaxLength(32).HasColumnType("nvarchar(32)");
             entity.HasKey("Id");
+            entity.HasIndex("OwnerId");
             entity.ToTable("Habits");
         });
 
@@ -72,5 +76,34 @@ public sealed class AppDbContextModelSnapshot : ModelSnapshot
         });
 
         modelBuilder.Entity("TodoApp.Api.Models.Habit", entity => entity.Navigation("Completions"));
+
+        modelBuilder.Entity("TodoApp.Api.Models.AppUser", entity =>
+        {
+            entity.Property<string>("Id").HasMaxLength(32).HasColumnType("nvarchar(32)");
+            entity.Property<DateTime>("CreatedAt").HasColumnType("datetime2");
+            entity.Property<string>("Email").IsRequired().HasMaxLength(256).HasColumnType("nvarchar(256)");
+            entity.Property<string>("NormalizedEmail").IsRequired().HasMaxLength(256).HasColumnType("nvarchar(256)");
+            entity.Property<string>("PasswordHash").IsRequired().HasMaxLength(256).HasColumnType("nvarchar(256)");
+            entity.HasKey("Id");
+            entity.HasIndex("NormalizedEmail").IsUnique();
+            entity.ToTable("Users");
+        });
+
+        modelBuilder.Entity("TodoApp.Api.Models.Habit", entity =>
+        {
+            entity.HasOne("TodoApp.Api.Models.AppUser", "Owner").WithMany("Habits")
+                .HasForeignKey("OwnerId").OnDelete(DeleteBehavior.Cascade);
+            entity.Navigation("Owner");
+        });
+
+        modelBuilder.Entity("TodoApp.Api.Models.AppUser", entity => entity.Navigation("Habits"));
+
+        modelBuilder.Entity("TodoApp.Api.Models.TodoItem", entity =>
+        {
+            entity.HasOne("TodoApp.Api.Models.AppUser", "Owner").WithMany("Todos")
+                .HasForeignKey("OwnerId").OnDelete(DeleteBehavior.Cascade);
+            entity.Navigation("Owner");
+        });
+        modelBuilder.Entity("TodoApp.Api.Models.AppUser", entity => entity.Navigation("Todos"));
     }
 }

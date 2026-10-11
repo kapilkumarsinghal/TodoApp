@@ -2,7 +2,7 @@
   <header class="habit-topbar">
     <a class="brand" href="/">◷ <span>daymark</span></a>
     <nav><a href="/">Calendar</a><span>/</span><strong>Habit tracker</strong></nav>
-    <a class="back-link" href="/">← Back to calendar</a>
+    <div class="account-actions"><span>{{ account.email() }}</span><button type="button" (click)="signOut()">Sign out</button><a class="back-link" href="/">← Calendar</a></div>
   </header>
 
   <section class="habit-heading">

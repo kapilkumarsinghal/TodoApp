@@ -84,9 +84,9 @@
     </section>
 
     <div class="sidebar-footer">
-      <span class="avatar">K</span>
-      <span class="profile-copy"><strong>My workspace</strong><small>Personal plan</small></span>
-      <span class="more">···</span>
+      <span class="avatar">{{ account.email().charAt(0).toUpperCase() }}</span>
+      <span class="profile-copy"><strong [title]="account.email()">{{ account.email() }}</strong><small>Personal workspace</small></span>
+      <button class="more sign-out" type="button" (click)="signOut()" aria-label="Sign out" title="Sign out">↪</button>
     </div>
   </aside>
 
@@ -95,6 +95,7 @@
       <div class="breadcrumb">Workspace <span>/</span> <strong>Calendar</strong></div>
       <div class="topbar-actions">
         <span class="today-label">{{ selectedDate() | date:'EEEE, MMMM d' }}</span>
+        <button class="sign-out-top" type="button" (click)="signOut()">Sign out</button>
         <button class="icon-button" type="button" aria-label="Search">⌕</button>
         <button class="icon-button notification" type="button" aria-label="Notifications">♧</button>
         <span class="avatar top-avatar">K</span>

@@ -12,6 +12,8 @@ public class TodoItem
     public int? ReminderMinutesBefore { get; set; }
     public int? RepeatEveryHours { get; set; }
     public string Category { get; set; } = "Personal";
+    public string? OwnerId { get; set; }
+    public AppUser? Owner { get; set; }
     public int Priority { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

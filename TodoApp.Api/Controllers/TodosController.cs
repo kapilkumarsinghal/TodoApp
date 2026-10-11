@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using TodoApp.Api.DataTransfer.Requests;
 using TodoApp.Api.DataTransfer.Responses;
 using TodoApp.Api.Services;
@@ -7,6 +9,7 @@ namespace TodoApp.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class TodosController : ControllerBase
 {
     private readonly ITodoService _todoService;
@@ -19,14 +22,14 @@ public class TodosController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<TodoResponse>>> GetAll()
     {
-        var items = await _todoService.GetAllAsync();
+        var items = await _todoService.GetAllAsync(CurrentUserId);
         return Ok(items);
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<TodoResponse>> GetById(int id)
     {
-        var item = await _todoService.GetByIdAsync(id);
+        var item = await _todoService.GetByIdAsync(CurrentUserId, id);
         return item is null ? NotFound() : Ok(item);
     }
 
@@ -47,7 +50,7 @@ public class TodosController : ControllerBase
         if (!ValidReminder(request.ReminderMinutesBefore) || !ValidRepeat(request.RepeatEveryHours))
             return BadRequest("Reminder must be 5, 10, 15, or 30 minutes; repeat must be every 1 or 2 hours.");
 
-        var item = await _todoService.CreateAsync(request);
+        var item = await _todoService.CreateAsync(CurrentUserId, request);
         return CreatedAtAction(nameof(GetById), new { id = item.Id }, item);
     }
 
@@ -73,17 +76,18 @@ public class TodosController : ControllerBase
         if (!ValidReminder(request.ReminderMinutesBefore) || !ValidRepeat(request.RepeatEveryHours))
             return BadRequest("Reminder must be 5, 10, 15, or 30 minutes; repeat must be every 1 or 2 hours.");
 
-        var item = await _todoService.UpdateAsync(request);
+        var item = await _todoService.UpdateAsync(CurrentUserId, request);
         return item is null ? NotFound() : Ok(item);
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var deleted = await _todoService.DeleteAsync(id);
+        var deleted = await _todoService.DeleteAsync(CurrentUserId, id);
         return deleted ? NoContent() : NotFound();
     }
 
     private static bool ValidReminder(int? value) => value is null or 5 or 10 or 15 or 30;
     private static bool ValidRepeat(int? value) => value is null or 1 or 2;
+    private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 }

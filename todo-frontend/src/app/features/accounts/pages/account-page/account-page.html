@@ -1,0 +1,17 @@
+<main class="account-page">
+  <a class="account-brand" href="/">◷ <span>daymark</span></a>
+  <section class="account-card">
+    <div class="account-symbol">✓</div>
+    <p class="eyebrow">Your habits, your pace</p>
+    <h1>{{ isRegister ? 'Create your account' : 'Welcome back' }}</h1>
+    <p class="account-copy">{{ isRegister ? 'Keep your habit progress private to your account.' : 'Sign in to see your personal habit tracker.' }}</p>
+    @if (error()) { <div class="account-error" role="alert">{{ error() }}</div> }
+    <form (ngSubmit)="submit()">
+      <label>Email address<input type="email" name="email" [ngModel]="email()" (ngModelChange)="email.set($event)" autocomplete="email" placeholder="you@example.com" required /></label>
+      <label>Password<input type="password" name="password" [ngModel]="password()" (ngModelChange)="password.set($event)" [attr.autocomplete]="isRegister ? 'new-password' : 'current-password'" placeholder="At least 8 characters" minlength="8" maxlength="128" required /></label>
+      <button type="submit" [disabled]="busy()">{{ busy() ? 'Please wait…' : isRegister ? 'Create account' : 'Sign in' }}</button>
+    </form>
+    <p class="account-switch">{{ isRegister ? 'Already have an account?' : 'New to Daymark?' }} <a [href]="isRegister ? '/login' : '/register'">{{ isRegister ? 'Sign in' : 'Create an account' }}</a></p>
+  </section>
+  <a class="calendar-link" href="/">← Return to calendar</a>
+</main>

@@ -3,6 +3,8 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CreateTodoRequest, Todo, UpdateTodoRequest } from '../../models/todo.models';
 import { TodoApiService } from '../../data-access/todo-api.service';
+import { AccountService } from '../../../accounts/data-access/account.service';
+import { Router } from '@angular/router';
 
 interface CalendarDay {
   date: Date;
@@ -20,6 +22,8 @@ interface CalendarOccurrence { todo: Todo; start: Date; end: Date; }
 })
 export class TodosPageComponent implements OnInit {
   private readonly todoApi = inject(TodoApiService);
+  readonly account = inject(AccountService);
+  private readonly router = inject(Router);
 
   readonly categories = ['Work', 'Personal', 'Health', 'Learning'] as const;
   readonly hours = Array.from({ length: 15 }, (_, index) => new Date(2000, 0, 1, index + 7));
@@ -88,6 +92,8 @@ export class TodosPageComponent implements OnInit {
   }
 
   ngOnDestroy(): void { this.reminderTimers.forEach((timer) => window.clearTimeout(timer)); }
+
+  signOut(): void { this.account.logout(); void this.router.navigateByUrl('/login'); }
 
   visibleTodos(): Todo[] {
     const category = this.selectedCategory();
