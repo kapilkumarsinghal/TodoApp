@@ -2,6 +2,7 @@ import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { AccountRequest, AccountResponse } from '../models/account.models';
+import { apiUrl } from '../../../core/api-config';
 
 const tokenKey = 'todoapp.accessToken';
 const emailKey = 'todoapp.email';
@@ -9,7 +10,7 @@ const emailKey = 'todoapp.email';
 @Injectable({ providedIn: 'root' })
 export class AccountService {
   private readonly http = inject(HttpClient);
-  private readonly endpoint = 'http://localhost:5160/api/accounts';
+  private readonly endpoint = apiUrl('/accounts');
   readonly email = signal(localStorage.getItem(emailKey) ?? '');
 
   get token(): string | null {

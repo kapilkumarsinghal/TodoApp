@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { apiUrl } from '../../../core/api-config';
 import {
   CreateTodoRequest,
   Todo,
@@ -10,7 +11,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class TodoApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:5160/api/todos';
+  private readonly baseUrl = apiUrl('/todos');
 
   getAll(): Promise<Todo[]> {
     return firstValueFrom(this.http.get<Todo[]>(this.baseUrl));
